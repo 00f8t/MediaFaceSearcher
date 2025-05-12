@@ -1,0 +1,27 @@
+﻿<mah:MetroWindow x:Class="MediaFaceSearcher.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MediaFaceSearcher"
+        xmlns:view="clr-namespace:MediaFaceSearcher.Views"
+        mc:Ignorable="d" WindowState="Maximized"
+        Title="МЕДІА РОЗПІЗНАВАЧ" Height="450" Width="800">
+    <Grid>
+        <mah:MetroTabControl>
+            <mah:MetroTabItem Header="Головна">
+                <view:MainPageView/>
+            </mah:MetroTabItem>
+
+            <mah:MetroTabItem Header="Люди">
+                <view:PeoplePageView/>
+            </mah:MetroTabItem>
+
+            <mah:MetroTabItem Header="Налаштування">
+                <view:SettingsPageView/>
+            </mah:MetroTabItem>
+
+        </mah:MetroTabControl>
+    </Grid>
+</mah:MetroWindow>
