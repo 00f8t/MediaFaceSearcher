@@ -6,7 +6,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MediaFaceSearcher"
         xmlns:view="clr-namespace:MediaFaceSearcher.Views"
-        mc:Ignorable="d" WindowState="Maximized"
+        mc:Ignorable="d" WindowState="Maximized" ResizeMode="CanMinimize"
         Title="МЕДІА РОЗПІЗНАВАЧ" Height="450" Width="800">
     <Grid>
         <mah:MetroTabControl>

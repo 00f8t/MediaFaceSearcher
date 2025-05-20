@@ -1,21 +1,18 @@
 ﻿<UserControl x:Class="MediaFaceSearcher.Views.MainPageView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:MediaFaceSearcher.Views"
-             xmlns:vm="clr-namespace:MediaFaceSearcher.ViewModels"
-             xmlns:prism="http://prismlibrary.com/"
-             xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
              xmlns:icons="http://metro.mahapps.com/winfx/xaml/iconpacks"
-             xmlns:viewModels="clr-namespace:MediaFaceSearcher.ViewModels"
-             xmlns:converters="clr-namespace:MediaFaceSearcher.Converters"
-             xmlns:flyleaf="clr-namespace:FlyleafLib.Controls.WPF;assembly=FlyleafLib.Controls.WPF"
+             xmlns:prism="http://prismlibrary.com/"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:converters="clr-namespace:MediaFaceSearcher.Converters"
+             xmlns:viewModels="clr-namespace:MediaFaceSearcher.ViewModels"
+             xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
              mc:Ignorable="d" prism:ViewModelLocator.AutoWireViewModel="True"
              d:DesignHeight="450" d:DesignWidth="800"
              d:DataContext="{d:DesignInstance viewModels:MainPageViewModel}">
-    <Grid ShowGridLines="True">
+    <Grid ShowGridLines="False">
         <Grid.RowDefinitions>
             <RowDefinition/>
             <RowDefinition/>
@@ -31,6 +28,8 @@
         </Grid.ColumnDefinitions>
         <Grid.Resources>
             <converters:SecondToLengthConverter x:Key="SecondToLengthConverter"/>
+            <converters:StringToBoolConverter x:Key="StringToBoolConverter"/>
+            <converters:ConfidenceToColorConverter x:Key="ConfidenceToColorConverter"/>
         </Grid.Resources>
 
         <!--<Rectangle Grid.Row="1" VerticalAlignment="Top" Height="3" Width="{Binding RelativeSource={RelativeSource AncestorType=UserControl}, Path=ActualWidth}" Margin="40, 0" Fill="CornflowerBlue"/>-->
@@ -38,25 +37,34 @@
 
 
         <Grid Name="MediaGrid"  Grid.Row="0" Grid.Column="1" Grid.RowSpan="3" Grid.ColumnSpan="3" Margin="50">
-            <Button
-                    Style="{StaticResource MahApps.Styles.Button.Flat}" Background="Gray" Command="{Binding OpenMediaFileCommand}">
-                <icons:PackIconBootstrapIcons Kind="Upload" Width="300" Height="300" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="DarkGray"/>
-            </Button>
-            <!--<flyleaf:FlyleafME x:Name="Player">
+            <Canvas x:Name="FaceCanvas" IsHitTestVisible="False" Background="Transparent" Panel.ZIndex="87"
+                    mah:VisibilityHelper.IsVisible="{Binding ElementName=ShowFacesCheckbox, Path=IsChecked, UpdateSourceTrigger=PropertyChanged}">
                 <b:Interaction.Triggers>
                     <b:EventTrigger EventName="Loaded">
-                        <b:InvokeCommandAction Command="{Binding PlayerLoadedCommand}" CommandParameter="{Binding ElementName=Player}"/>
+                        <b:InvokeCommandAction Command="{Binding CanvasLoadedCommand}" CommandParameter="{Binding ElementName=FaceCanvas}"/>
                     </b:EventTrigger>
                 </b:Interaction.Triggers>
-            </flyleaf:FlyleafME>-->
+            </Canvas>
+            <Button Style="{StaticResource MahApps.Styles.Button.Flat}" Background="Gray" 
+                    Command="{Binding OpenMediaFileCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
+                    x:Name="UploadButton">
+                <icons:PackIconBootstrapIcons Kind="Upload" Width="300" Height="300" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="DarkGray"/>
+            </Button>
             <Button Width="40" Height="40" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="15" 
                     Content="x" FontSize="24" FontFamily="Arial" FontWeight="Regular"
                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                    Command="{Binding CloseMediaCommand}"/>
+                    Command="{Binding CloseMediaCommand}" Panel.ZIndex="88"/>
+            <Image Source="{Binding MediaSource}" IsHitTestVisible="False"
+                   Width="{Binding ElementName=UploadButton, Path=ActualWidth}" Height="{Binding ElementName=UploadButton, Path=ActualHeight}"/>
         </Grid>
 
+        <Viewbox Grid.Column="4" Grid.Row="0" Height="30" HorizontalAlignment="Left" Margin="0,-100,0,0">
+            <CheckBox Content="Показувати обличчя" IsChecked="True" x:Name="ShowFacesCheckbox"/>
+        </Viewbox>
+
+
         <ListView Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="5" Margin="20" BorderBrush="CornflowerBlue" BorderThickness="2" Padding="15, 5"
-                  ItemsSource="{Binding FooItems}" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                  ItemsSource="{Binding RecentPersons}" ScrollViewer.VerticalScrollBarVisibility="Disabled">
             <ListView.ItemsPanel>
                 <ItemsPanelTemplate>
                     <WrapPanel Height="{Binding RelativeSource={RelativeSource AncestorType=ListView}, Path=ActualHeight}"/>
@@ -65,8 +73,11 @@
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel>
-                        <Image Height="180" Width="130" Source="{Binding}" Margin="10"/>
-                        <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Center" Foreground="LawnGreen" Text="0.657"/>
+                        <Image Height="180" Width="130" Source="{Binding CroppedImage}" Margin="10"/>
+                        <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Center" Text="{Binding ClosestPerson.Name}" 
+                                   Foreground="{Binding Confidence, Converter={StaticResource ConfidenceToColorConverter}}"/>
+                        <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Center" Text="{Binding Confidence}"
+                                   Foreground="{Binding Confidence, Converter={StaticResource ConfidenceToColorConverter}}"/>
                     </StackPanel>
                 </DataTemplate>
             </ListView.ItemTemplate>
