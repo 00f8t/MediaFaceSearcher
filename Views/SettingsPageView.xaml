@@ -3,10 +3,40 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
              xmlns:local="clr-namespace:MediaFaceSearcher.Views"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-            
+        <Grid ShowGridLines="False" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+
+            <Label Grid.Row="0" Content="Поріг визначення обличчя" FontWeight="SemiBold" FontSize="24"/>
+            <Slider Grid.Row="1" Minimum="0.3" Maximum="0.99" AutoToolTipPrecision="2" IsMoveToPointEnabled="True" Margin="10,0, 0, 20" Width="250" HorizontalAlignment="Left"
+                    mah:SliderHelper.EnableMouseWheel="MouseHover" AutoToolTipPlacement="TopLeft" mah:SliderHelper.ChangeValueBy="SmallChange" SmallChange="0.05" x:Name="DetSlider"/>
+            <TextBlock Grid.Row="1" Text="{Binding ElementName=DetSlider, Path=Value, StringFormat={}{0:F2}}" HorizontalAlignment="Right" FontSize="24" FontWeight="SemiBold" Margin="0,0,15,0"/>
+
+
+            <Label Grid.Row="2" Content="Поріг розпізнавання обличчя" FontWeight="SemiBold" FontSize="24"/>
+            <Slider Grid.Row="3" Minimum="0.3" Maximum="0.99" AutoToolTipPrecision="2" IsMoveToPointEnabled="True" Margin="10,0, 0, 20" Width="250" HorizontalAlignment="Left"
+                    mah:SliderHelper.EnableMouseWheel="MouseHover" AutoToolTipPlacement="TopLeft" mah:SliderHelper.ChangeValueBy="SmallChange" SmallChange="0.05" x:Name="RecSlider"/>
+            <TextBlock Grid.Row="3" Text="{Binding ElementName=RecSlider, Path=Value, StringFormat={}{0:F2}}" HorizontalAlignment="Right" FontSize="24" FontWeight="SemiBold" Margin="0,0,15,0"/>
+
+
+            <Label Grid.Row="4" Content="Шлях до збережених фото" FontWeight="SemiBold" FontSize="24"/>
+            <StackPanel Orientation="Horizontal" Grid.Row="5">
+                <TextBox Text="C:\Users\user\OneDrive\Pictures\Camera Roll" IsReadOnly="True" Margin="10, 0, 0, 0"/>
+                <Button Content="..." VerticalContentAlignment="Bottom" Style="{StaticResource MahApps.Styles.Button.Flat}"/>
+            </StackPanel>
+
+        </Grid>
+        <Button HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="50" Content="Зберегти налаштування" Height="70" Width="400" FontSize="24"/>
     </Grid>
 </UserControl>

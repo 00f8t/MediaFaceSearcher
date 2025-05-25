@@ -14,11 +14,12 @@ namespace MediaFaceSearcher.Converters
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             // Expect value to be double between 0.5 and 1.0
-            if (value is double confidence)
+            if (value is float confidence)
             {
-                // Clamp confidence between 0.5 and 1.0
-                confidence = Math.Max(0.5, Math.Min(1.0, confidence));
-
+                if (confidence == 0)
+                {
+                    return new SolidColorBrush(Colors.Transparent);
+                }
                 // Interpolate between yellow (1,1,0) and green (0,1,0)
                 // t = (confidence - 0.5) / 0.5, so t=0 is yellow, t=1 is green
                 double t = (confidence - 0.5) / 0.5;

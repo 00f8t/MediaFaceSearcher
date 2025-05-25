@@ -15,11 +15,11 @@ using System.Windows.Shapes;
 namespace MediaFaceSearcher.Views
 {
     /// <summary>
-    /// Interaction logic for AddPersonView.xaml
+    /// Interaction logic for AddingPersonView.xaml
     /// </summary>
-    public partial class AddPersonView : Window
+    public partial class AddingPersonView
     {
-        public AddPersonView()
+        public AddingPersonView()
         {
             InitializeComponent();
         }

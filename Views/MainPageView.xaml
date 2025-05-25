@@ -48,6 +48,15 @@
             <Button Style="{StaticResource MahApps.Styles.Button.Flat}" Background="Gray" 
                     Command="{Binding OpenMediaFileCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
                     x:Name="UploadButton">
+                <Button.ContextMenu>
+                    <ContextMenu>
+                        <ContextMenu.Items>
+                            <Label Content="Використовувати як фото профілю"/>
+                            <Label Content="Редагувати фото"/>
+                            <Label Content="Видалити фото"/>
+                        </ContextMenu.Items>
+                    </ContextMenu>
+                </Button.ContextMenu>
                 <icons:PackIconBootstrapIcons Kind="Upload" Width="300" Height="300" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="DarkGray"/>
             </Button>
             <Button Width="40" Height="40" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="15" 
@@ -63,7 +72,9 @@
         </Viewbox>
 
 
-        <ListView Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="5" Margin="20" BorderBrush="CornflowerBlue" BorderThickness="2" Padding="15, 5"
+            <Button Grid.Column="5" Grid.Row="3" Width="150" Height="50" Panel.ZIndex="1" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="50" Content="ЗБЕРЕГТИ" FontSize="18"
+                    Style="{StaticResource MahApps.Styles.Button.Flat}" Background="CornflowerBlue" Foreground="White"/>
+        <ListView Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="5" Margin="10" BorderBrush="CornflowerBlue" BorderThickness="2" Padding="15, 0"
                   ItemsSource="{Binding RecentPersons}" ScrollViewer.VerticalScrollBarVisibility="Disabled">
             <ListView.ItemsPanel>
                 <ItemsPanelTemplate>
@@ -73,14 +84,16 @@
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel>
-                        <Image Height="180" Width="130" Source="{Binding CroppedImage}" Margin="10"/>
+                        <Image Height="130" Width="130" Source="{Binding CroppedImage}" Margin="10"/>
                         <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Center" Text="{Binding ClosestPerson.Name}" 
                                    Foreground="{Binding Confidence, Converter={StaticResource ConfidenceToColorConverter}}"/>
                         <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Center" Text="{Binding Confidence}"
-                                   Foreground="{Binding Confidence, Converter={StaticResource ConfidenceToColorConverter}}"/>
+                                   Foreground="{Binding Confidence, Converter={StaticResource ConfidenceToColorConverter}}"/>                        
+                        <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Center" Text="Нейтрально"/>
                     </StackPanel>
                 </DataTemplate>
             </ListView.ItemTemplate>
+
         </ListView>
     </Grid>
 </UserControl>

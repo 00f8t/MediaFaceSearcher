@@ -10,6 +10,7 @@ using System.Drawing.Imaging;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
+using Size = System.Drawing.Size;
 
 namespace MediaFaceSearcher.ViewModels
 {
@@ -22,6 +23,7 @@ namespace MediaFaceSearcher.ViewModels
 
         private Canvas? FaceCanvas;
         private List<Person> _allPersons;
+
         public MainPageViewModel(IPersonDao personDao)
         {
             OpenMediaFileCommand = new DelegateCommand<Button>(OpenMediaFile);
@@ -38,7 +40,9 @@ namespace MediaFaceSearcher.ViewModels
 
 
         #region Binding
+
         private ObservableCollection<PotentialPerson> _recentPersons = new();
+
         public ObservableCollection<PotentialPerson> RecentPersons
         {
             get => _recentPersons;
@@ -46,6 +50,7 @@ namespace MediaFaceSearcher.ViewModels
         }
 
         private BitmapSource _mediaSource;
+
         public BitmapSource MediaSource
         {
             get => _mediaSource;
@@ -55,7 +60,9 @@ namespace MediaFaceSearcher.ViewModels
         #endregion
 
         #region Commands
+
         public DelegateCommand<Button> OpenMediaFileCommand { get; }
+
         private void OpenMediaFile(Button button)
         {
             var dialog = CreateOpenFileDialog();
@@ -65,7 +72,8 @@ namespace MediaFaceSearcher.ViewModels
                 int targetWidth = (int)button.ActualWidth;
                 int targetHeight = (int)button.ActualHeight;
 
-                using var paddedBitmap = CreatePaddedBitmap(originalBitmap, targetWidth, targetHeight, out int scaledWidth, out int scaledHeight);
+                using var paddedBitmap = CreatePaddedBitmap(originalBitmap, targetWidth, targetHeight,
+                    out int scaledWidth, out int scaledHeight);
 
                 MediaSource = ConvertBitmapToBitmapSource(paddedBitmap);
 
@@ -77,6 +85,7 @@ namespace MediaFaceSearcher.ViewModels
 
 
         public DelegateCommand CloseMediaCommand { get; }
+
         private void CloseMedia()
         {
             MediaSource = null;
@@ -84,13 +93,16 @@ namespace MediaFaceSearcher.ViewModels
         }
 
         public DelegateCommand<Canvas> CanvasLoadedCommand { get; }
+
         private void CanvasLoaded(Canvas canvas)
         {
             FaceCanvas = canvas;
         }
+
         #endregion
 
         #region Methods
+
         private OpenFileDialog CreateOpenFileDialog()
         {
             return new OpenFileDialog
@@ -99,10 +111,12 @@ namespace MediaFaceSearcher.ViewModels
             };
         }
 
-        private Bitmap CreatePaddedBitmap(Bitmap originalBitmap, int targetWidth, int targetHeight, out int scaledWidth, out int scaledHeight)
+        private Bitmap CreatePaddedBitmap(Bitmap originalBitmap, int targetWidth, int targetHeight, out int scaledWidth,
+            out int scaledHeight)
         {
             // Calculate scale to fit while preserving aspect ratio
-            float scale = Math.Min((float)targetWidth / originalBitmap.Width, (float)targetHeight / originalBitmap.Height);
+            float scale = Math.Min((float)targetWidth / originalBitmap.Width,
+                (float)targetHeight / originalBitmap.Height);
             scaledWidth = (int)(originalBitmap.Width * scale);
             scaledHeight = (int)(originalBitmap.Height * scale);
 
@@ -116,11 +130,13 @@ namespace MediaFaceSearcher.ViewModels
                 g.Clear(System.Drawing.Color.Black);
                 g.DrawImage(originalBitmap, offsetX, offsetY, scaledWidth, scaledHeight);
             }
+
             return paddedBitmap;
         }
 
         private BitmapSource ConvertBitmapToBitmapSource(Bitmap bitmap)
         {
+            //bitmap.Save(@"C:\Users\rosse\Downloads\foo.jpg");
             return System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
                 bitmap.GetHbitmap(),
                 IntPtr.Zero,
@@ -128,7 +144,8 @@ namespace MediaFaceSearcher.ViewModels
                 BitmapSizeOptions.FromEmptyOptions());
         }
 
-        private void DrawFacesOnCanvas(IReadOnlyCollection<FaceDetectorResult> faces, int originalWidth, int originalHeight, int scaledWidth, int scaledHeight)
+        private void DrawFacesOnCanvas(IReadOnlyCollection<FaceDetectorResult> faces, int originalWidth,
+            int originalHeight, int scaledWidth, int scaledHeight)
         {
             if (FaceCanvas == null) return;
             FaceCanvas.Children.Clear();
@@ -140,16 +157,18 @@ namespace MediaFaceSearcher.ViewModels
 
             foreach (var face in faces)
             {
+                var faceRect = GetClampedFaceRectangle(face, new Size(originalWidth, originalHeight));
+
                 // Draw face rectangle
                 var rect = new System.Windows.Shapes.Rectangle
                 {
-                    Width = face.Box.Width * scaleX,
-                    Height = face.Box.Height * scaleY,
+                    Width = faceRect.Width * scaleX,
+                    Height = faceRect.Height * scaleY,
                     Stroke = System.Windows.Media.Brushes.Green,
                     StrokeThickness = 3
                 };
-                Canvas.SetLeft(rect, face.Box.X * scaleX);
-                Canvas.SetTop(rect, face.Box.Y * scaleX);
+                Canvas.SetLeft(rect, faceRect.X * scaleX);
+                Canvas.SetTop(rect, faceRect.Y * scaleY);
                 FaceCanvas.Children.Add(rect);
 
                 // Draw keypoints as small dots
@@ -172,16 +191,22 @@ namespace MediaFaceSearcher.ViewModels
             }
         }
 
-        private void AddNewPersons(IReadOnlyCollection<FaceDetectorResult> faces, Bitmap originalBitmap, string filePath)
+        private void AddNewPersons(IReadOnlyCollection<FaceDetectorResult> faces, Bitmap originalBitmap,
+            string filePath)
         {
             foreach (var face in faces)
             {
-                if (TryFindExistingPerson(face, filePath, out Person closestPerson, out float[] embedding, out float confidence))
+                var faceRect = GetClampedFaceRectangle(face, new Size(originalBitmap.Width, originalBitmap.Height));
+                var croppedImage = ConvertBitmapToBitmapSource(originalBitmap.Clone(faceRect, PixelFormat.Format24bppRgb));
+
+
+                if (TryFindExistingPerson(face, filePath, out Person closestPerson, out float[] embedding,
+                        out float confidence))
                 {
                     RecentPersons.Add(new PotentialPerson
                     {
                         ClosestPerson = closestPerson,
-                        CroppedImage = ConvertBitmapToBitmapSource(originalBitmap.Clone(new RectangleF(face.Box.X, face.Box.Y, face.Box.Width, face.Box.Height), PixelFormat.Format24bppRgb)),
+                        CroppedImage = croppedImage,
                         Confidence = confidence,
                         FaceDetectorResult = face,
                         FilePath = filePath,
@@ -192,16 +217,28 @@ namespace MediaFaceSearcher.ViewModels
                 {
                     RecentPersons.Add(new PotentialPerson()
                     {
-                        CroppedImage = ConvertBitmapToBitmapSource(originalBitmap.Clone(new RectangleF(face.Box.X, face.Box.Y, face.Box.Width, face.Box.Height), PixelFormat.Format24bppRgb)),
+                        CroppedImage = croppedImage,
                         FilePath = filePath,
                         Embedding = embedding,
                         FaceDetectorResult = face,
                     });
                 }
             }
+
+            //var person = new Person()
+            //{
+            //    Name = "Дмитро",
+            //    Photos = RecentPersons.Select(p => new Photo
+            //    {
+            //        Embedding = p.Embedding,
+            //        FilePath = p.FilePath,
+            //    }).ToList()
+            //};
+            //_personDao.Update([person]);
         }
 
-        private bool TryFindExistingPerson(FaceDetectorResult face, string filePath, out Person closestPerson, out float[] embedding, out float confidence)
+        private bool TryFindExistingPerson(FaceDetectorResult face, string filePath, out Person closestPerson,
+            out float[] embedding, out float confidence)
         {
             closestPerson = null;
             embedding = _faceRecognizer.Detect(filePath, face.Landmarks);
@@ -236,6 +273,45 @@ namespace MediaFaceSearcher.ViewModels
         {
             RecentPersons.Clear();
         }
+
         #endregion
+
+        private RectangleF GetClampedFaceRectangle(FaceDetectorResult face, Size originalSize)
+        {
+            var faceX = face.Box.X;
+            var faceY = face.Box.Y;
+            var faceW = face.Box.Width;
+            var faceH = face.Box.Height;
+
+            // Clamp X and adjust width
+            if (faceX < 0)
+            {
+                faceW += faceX; // reduce width by the amount x is negative
+                faceX = 0;
+            }
+
+            if (faceX + faceW > originalSize.Width)
+            {
+                faceW = originalSize.Width - faceX;
+            }
+
+            // Clamp Y and adjust height
+            if (faceY < 0)
+            {
+                faceH += faceY; // reduce height by the amount y is negative
+                faceY = 0;
+            }
+
+            if (faceY + faceH > originalSize.Height)
+            {
+                faceH = originalSize.Height - faceY;
+            }
+
+            // Ensure width and height are not negative
+            faceW = Math.Max(0, faceW);
+            faceH = Math.Max(0, faceH);
+
+            return new RectangleF(faceX, faceY, faceW, faceH);
+        }
     }
 }
