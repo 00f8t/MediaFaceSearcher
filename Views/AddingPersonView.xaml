@@ -5,14 +5,32 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MediaFaceSearcher.Views"
         xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
-        mc:Ignorable="d"
+        xmlns:viewModels="clr-namespace:MediaFaceSearcher.ViewModels"
+        xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+        xmlns:model="clr-namespace:MediaFaceSearcher.Model"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+        ResizeMode="CanMinimize"
+        mc:Ignorable="d" d:DataContext="{d:DesignInstance viewModels:AddingPersonViewModel}"
         Title="Збереження персони" Height="400" Width="600">
-    <Grid>
-        <Grid ShowGridLines="False">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="0.5*"/>
-                <ColumnDefinition/>
-            </Grid.ColumnDefinitions>
+    <Grid ShowGridLines="False">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="0.5*"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="4*"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <Grid.Resources>
+            <ObjectDataProvider x:Key="Emotions"
+                                MethodName="GetValues"
+                                ObjectType="{x:Type sys:Enum}">
+                <ObjectDataProvider.MethodParameters>
+                    <x:Type TypeName="model:Emotion" />
+                </ObjectDataProvider.MethodParameters>
+            </ObjectDataProvider>
+        </Grid.Resources>
+       
             <Grid Grid.Row="0" Grid.Column="1" Margin="20" ShowGridLines="False">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="0.5*"/>
@@ -29,21 +47,25 @@
                 <Label Grid.Column="0" Grid.Row="0" Content="Ім'я" FontSize="24" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                 <Label Grid.Column="0" Grid.Row="1" Content="Емоція" FontSize="24" HorizontalAlignment="Left" VerticalAlignment="Center"/>
 
-                <TextBox Grid.Column="1" Grid.Row="0" FontSize="24" Width="170" Height="40" Text="Дмитро" IsEnabled="False"/>
-                <ComboBox Grid.Column="1" Grid.Row="1" FontSize="24" Width="170" Height="40">
-                    <ComboBox.Items>
-                        Нейтрально
-                    </ComboBox.Items>
-                </ComboBox>
+                <TextBox Grid.Column="1" Grid.Row="0" FontSize="24" Width="170" Height="40" Text="{Binding Name}" IsEnabled="{Binding CanChangeName}"/>
+                <ComboBox Grid.Column="1" Grid.Row="1" FontSize="24" Width="170" Height="40" ItemsSource="{Binding Source={StaticResource Emotions}}" 
+                          SelectedValue="{Binding Emotion}"/>
+
                 <CheckBox  Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="2" Content="Зберегти копію фото" FontSize="24" 
                            VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Left" FlowDirection="RightToLeft"/>
-                <CheckBox  Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="2" Content="'Додати фото до 'Дмитро" FontSize="24" 
-                           VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Center" FlowDirection="RightToLeft"/>
+                <ComboBox Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="2" HorizontalAlignment="Left" FontSize="24" Height="40" Width="324"
+                          SelectedValue="{Binding SelectedPerson}" ItemsSource="{Binding AllPersons}">
+                </ComboBox>
 
-                <Button Grid.Row="4" Grid.Column="1" Margin="10" Content="Наступне фото"/>
             </Grid>
 
-            <Image Grid.Row="0" Grid.Column="0" Source="C:/Users/rosse/Downloads/foo.jpg" Width="150"/>
-        </Grid>
+        <Image Grid.Row="0" Grid.Column="0" Source="{Binding CurrentPerson.CroppedImage}" Width="150"/>
+
+        <Button Grid.Row="1" Grid.Column="1" Margin="10" Content="Далі" Command="{Binding NextPhotoCommand}"/>
+        <Button Grid.Row="1" Grid.Column="0" Margin="10" Content="Назад" Command="{Binding PreviousPhotoCommand}"/>
+
+        <Button Grid.Column="1" Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Top" Width="40" Height="40" Margin="5" Command="{Binding DeletePhotoCommand}">
+            <iconPacks:PackIconBootstrapIcons Kind="Trash" Width="20" Height="20" Foreground="IndianRed"/>
+        </Button>
     </Grid>
 </mah:MetroWindow>

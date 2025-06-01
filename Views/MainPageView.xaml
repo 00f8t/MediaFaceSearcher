@@ -68,12 +68,12 @@
         </Grid>
 
         <Viewbox Grid.Column="4" Grid.Row="0" Height="30" HorizontalAlignment="Left" Margin="0,-100,0,0">
-            <CheckBox Content="Показувати обличчя" IsChecked="True" x:Name="ShowFacesCheckbox"/>
+            <CheckBox Content="Показувати маску" IsChecked="True" x:Name="ShowFacesCheckbox"/>
         </Viewbox>
 
 
             <Button Grid.Column="5" Grid.Row="3" Width="150" Height="50" Panel.ZIndex="1" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="50" Content="ЗБЕРЕГТИ" FontSize="18"
-                    Style="{StaticResource MahApps.Styles.Button.Flat}" Background="CornflowerBlue" Foreground="White"/>
+                    Style="{StaticResource MahApps.Styles.Button.Dialogs.Accent}" Background="CornflowerBlue" Foreground="White" Command="{Binding SaveFacesCommand}"/>
         <ListView Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="5" Margin="10" BorderBrush="CornflowerBlue" BorderThickness="2" Padding="15, 0"
                   ItemsSource="{Binding RecentPersons}" ScrollViewer.VerticalScrollBarVisibility="Disabled">
             <ListView.ItemsPanel>
@@ -89,7 +89,7 @@
                                    Foreground="{Binding Confidence, Converter={StaticResource ConfidenceToColorConverter}}"/>
                         <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Center" Text="{Binding Confidence}"
                                    Foreground="{Binding Confidence, Converter={StaticResource ConfidenceToColorConverter}}"/>                        
-                        <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Center" Text="Нейтрально"/>
+                        <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Center" Text="{Binding Emotion}"/>
                     </StackPanel>
                 </DataTemplate>
             </ListView.ItemTemplate>

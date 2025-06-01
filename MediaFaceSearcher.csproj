@@ -11,6 +11,8 @@
   <ItemGroup>
     <PackageReference Include="FaceAiSharp" Version="0.5.23" />
     <PackageReference Include="FaceAiSharp.Bundle" Version="0.5.23" />
+    <PackageReference Include="FaceONNX" Version="4.0.4.2" />
+    <PackageReference Include="FaceONNX.Addons" Version="4.0.4.2" />
     <PackageReference Include="MahApps.Metro" Version="2.4.10" />
     <PackageReference Include="MahApps.Metro.IconPacks" Version="5.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />

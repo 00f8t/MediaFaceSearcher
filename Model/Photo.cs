@@ -13,5 +13,6 @@ namespace MediaFaceSearcher.Model
         public RectangleF FaceBox { get; set; }
         public List<PointF> Keypoints { get; set; }
         public string FilePath { get; set; }
+        public Emotion Emotion { get; set; }
     }
 }

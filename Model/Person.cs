@@ -11,5 +11,10 @@ namespace MediaFaceSearcher.Model
         public string Name { get; set; }
         public Guid Id { get; } = Guid.NewGuid();
         public List<Photo> Photos { get; set; }
+
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 }

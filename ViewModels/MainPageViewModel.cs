@@ -10,6 +10,8 @@ using System.Drawing.Imaging;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
+using MediaFaceSearcher.Views;
+using SixLabors.ImageSharp.PixelFormats;
 using Size = System.Drawing.Size;
 
 namespace MediaFaceSearcher.ViewModels
@@ -20,6 +22,7 @@ namespace MediaFaceSearcher.ViewModels
 
         private readonly FaceDetector _faceDetector;
         private readonly FaceRecognizer _faceRecognizer;
+        private readonly EmotionDetector _emotionDetector;
 
         private Canvas? FaceCanvas;
         private List<Person> _allPersons;
@@ -29,12 +32,14 @@ namespace MediaFaceSearcher.ViewModels
             OpenMediaFileCommand = new DelegateCommand<Button>(OpenMediaFile);
             CloseMediaCommand = new DelegateCommand(CloseMedia);
             CanvasLoadedCommand = new DelegateCommand<Canvas>(CanvasLoaded);
+            SaveFacesCommand = new DelegateCommand(SaveFaces);
 
             _personDao = personDao;
 
             _faceDetector = new FaceDetector();
-            _faceDetector = new FaceDetector();
             _faceRecognizer = new FaceRecognizer();
+            _emotionDetector = new EmotionDetector();
+
             _allPersons = _personDao.Read();
         }
 
@@ -42,7 +47,6 @@ namespace MediaFaceSearcher.ViewModels
         #region Binding
 
         private ObservableCollection<PotentialPerson> _recentPersons = new();
-
         public ObservableCollection<PotentialPerson> RecentPersons
         {
             get => _recentPersons;
@@ -50,7 +54,6 @@ namespace MediaFaceSearcher.ViewModels
         }
 
         private BitmapSource _mediaSource;
-
         public BitmapSource MediaSource
         {
             get => _mediaSource;
@@ -62,7 +65,6 @@ namespace MediaFaceSearcher.ViewModels
         #region Commands
 
         public DelegateCommand<Button> OpenMediaFileCommand { get; }
-
         private void OpenMediaFile(Button button)
         {
             var dialog = CreateOpenFileDialog();
@@ -72,8 +74,7 @@ namespace MediaFaceSearcher.ViewModels
                 int targetWidth = (int)button.ActualWidth;
                 int targetHeight = (int)button.ActualHeight;
 
-                using var paddedBitmap = CreatePaddedBitmap(originalBitmap, targetWidth, targetHeight,
-                    out int scaledWidth, out int scaledHeight);
+                using var paddedBitmap = CreatePaddedBitmap(originalBitmap, targetWidth, targetHeight, out int scaledWidth, out int scaledHeight);
 
                 MediaSource = ConvertBitmapToBitmapSource(paddedBitmap);
 
@@ -85,20 +86,29 @@ namespace MediaFaceSearcher.ViewModels
 
 
         public DelegateCommand CloseMediaCommand { get; }
-
         private void CloseMedia()
         {
             MediaSource = null;
             //_mediaPlayer.Stop();
         }
+        
 
         public DelegateCommand<Canvas> CanvasLoadedCommand { get; }
-
         private void CanvasLoaded(Canvas canvas)
         {
             FaceCanvas = canvas;
         }
 
+
+        public DelegateCommand SaveFacesCommand { get; }
+        private void SaveFaces()
+        {
+            var saveWindow = new AddingPersonView
+            {
+                DataContext = new AddingPersonViewModel(RecentPersons.ToList(), _allPersons)
+            };
+            saveWindow.ShowDialog();
+        }
         #endregion
 
         #region Methods
@@ -201,7 +211,7 @@ namespace MediaFaceSearcher.ViewModels
 
 
                 if (TryFindExistingPerson(face, filePath, out Person closestPerson, out float[] embedding,
-                        out float confidence))
+                        out float confidence, out Emotion emotion))
                 {
                     RecentPersons.Add(new PotentialPerson
                     {
@@ -210,7 +220,8 @@ namespace MediaFaceSearcher.ViewModels
                         Confidence = confidence,
                         FaceDetectorResult = face,
                         FilePath = filePath,
-                        Embedding = embedding
+                        Embedding = embedding,
+                        Emotion = emotion
                     });
                 }
                 else
@@ -221,6 +232,7 @@ namespace MediaFaceSearcher.ViewModels
                         FilePath = filePath,
                         Embedding = embedding,
                         FaceDetectorResult = face,
+                        Emotion = emotion
                     });
                 }
             }
@@ -238,10 +250,14 @@ namespace MediaFaceSearcher.ViewModels
         }
 
         private bool TryFindExistingPerson(FaceDetectorResult face, string filePath, out Person closestPerson,
-            out float[] embedding, out float confidence)
+            out float[] embedding, out float confidence, out Emotion emotion)
         {
             closestPerson = null;
-            embedding = _faceRecognizer.Detect(filePath, face.Landmarks);
+            using var image = SixLabors.ImageSharp.Image.Load<Rgb24>(filePath);
+            embedding = _faceRecognizer.Detect(image, face.Landmarks);
+            //var aligned = _faceRecognizer.AlignFaceToBitmap(image, face.Landmarks);
+            emotion = _emotionDetector.Detect(image.ToBitmap()).ToEmotion();
+
 
             float maxConfidence = 0.5f;
             Person bestPerson = null;
@@ -252,21 +268,18 @@ namespace MediaFaceSearcher.ViewModels
                 foreach (var photo in person.Photos)
                 {
                     confidence = embedding.Dot(photo.Embedding);
-                    if (confidence > maxConfidence)
-                    {
-                        maxConfidence = confidence;
-                        bestPerson = person;
-                    }
+                    if (!(confidence > maxConfidence)) continue;
+                    
+                    maxConfidence = confidence;
+                    bestPerson = person;
                 }
             }
 
-            if (bestPerson != null)
-            {
-                closestPerson = bestPerson;
-                return true;
-            }
+            if (bestPerson == null) return false;
 
-            return false;
+            closestPerson = bestPerson;
+            return true;
+
         }
 
         private void MediaSourceChanged()

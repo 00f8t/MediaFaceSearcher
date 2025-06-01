@@ -18,5 +18,6 @@ namespace MediaFaceSearcher.Model
         public FaceDetectorResult FaceDetectorResult { get; set; }
         public string FilePath { get; set; }
         public float[] Embedding { get; set; }
+        public Emotion Emotion { get; set; }
     }
 }
