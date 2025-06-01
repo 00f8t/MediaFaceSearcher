@@ -47,7 +47,7 @@
                 <Label Grid.Column="0" Grid.Row="0" Content="Ім'я" FontSize="24" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                 <Label Grid.Column="0" Grid.Row="1" Content="Емоція" FontSize="24" HorizontalAlignment="Left" VerticalAlignment="Center"/>
 
-                <TextBox Grid.Column="1" Grid.Row="0" FontSize="24" Width="170" Height="40" Text="{Binding Name}" IsEnabled="{Binding CanChangeName}"/>
+                <TextBox Grid.Column="1" Grid.Row="0" FontSize="24" Width="170" Height="40" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanChangeName}"/>
                 <ComboBox Grid.Column="1" Grid.Row="1" FontSize="24" Width="170" Height="40" ItemsSource="{Binding Source={StaticResource Emotions}}" 
                           SelectedValue="{Binding Emotion}"/>
 
