@@ -53,8 +53,6 @@
                 <ComboBox Grid.Column="1" Grid.Row="1" FontSize="24" Width="170" Height="40" ItemsSource="{Binding Source={StaticResource Emotions}}" 
                           SelectedValue="{Binding Emotion}"/>
 
-                <CheckBox  Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="2" Content="Зберегти копію фото" FontSize="24" 
-                           VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Left" FlowDirection="RightToLeft"/>
                 <ComboBox Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="2" HorizontalAlignment="Left" FontSize="24" Height="40" Width="324"
                           SelectedValue="{Binding SelectedPerson}" ItemsSource="{Binding AllPersons}">
                 </ComboBox>

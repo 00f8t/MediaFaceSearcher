@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MediaFaceSearcher.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,6 +24,20 @@ namespace MediaFaceSearcher.Views
         public PeoplePageView()
         {
             InitializeComponent();
+        }
+
+        private void Grid_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            var grid = sender as Grid;
+            if (grid?.DataContext is Folder folder)
+            {
+                var listViewItem = ItemsControl.ContainerFromElement(Groups, grid) as ListViewItem;
+                if (listViewItem != null)
+                {
+                    e.Handled = true; // Важливо: щоб не викликався SelectedFolder on click
+                    //listViewItem.IsSelected = true;
+                }
+            }
         }
     }
 }

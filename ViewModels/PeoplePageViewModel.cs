@@ -9,27 +9,43 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
+using MahApps.Metro.Controls.Dialogs;
+using MediaFaceSearcher.Converters;
 using MediaFaceSearcher.DAL;
 using MediaFaceSearcher.Model;
+using MediaFaceSearcher.Model.Events;
 using Unity.Policy;
+using System.Diagnostics;
 
 namespace MediaFaceSearcher.ViewModels
 {
     class PeoplePageViewModel : BindableBase
     {
         private readonly IPersonDao _personDao;
-        private readonly List<Person> _allPersons = new();
-        public PeoplePageViewModel(IPersonDao personDao)
+        private readonly IDialogCoordinator _dialogCoordinator;
+        private readonly IEventAggregator _eventAggregator;
+        private List<Person> _allPersons = new();
+
+        public PeoplePageViewModel(IPersonDao personDao, IDialogCoordinator diaoCoordinator, IEventAggregator eventAggregator)
         {
             CloseFolderCommand = new DelegateCommand(CloseFolder);
+            DeletePersonCommand = new DelegateCommand(DeletePerson);
+            RenamePersonCommand = new DelegateCommand(RenamePerson);
+            DeleteFolderCommand = new DelegateCommand<Folder>(DeleteFolder);
+            OpenPhotoCommand = new DelegateCommand<Photo>(OpenPhoto);
+            MovePhotoCommand = new DelegateCommand<MovePhotoArgs>(MovePhoto);
+            MakePhotoMainCommand = new DelegateCommand<Photo>(MakePhotoMain);
+            DeletePhotoCommand = new DelegateCommand<Photo>(DeletePhoto);
 
             _personDao = personDao;
+            _dialogCoordinator = diaoCoordinator;
+            _eventAggregator = eventAggregator;
 
-            _allPersons = _personDao.Read();
-            _filteredPersons = new ObservableCollection<Person>(_allPersons);
 
             ValidatePhotos();
-            _personDao.PersonChanged += (_, _) => ValidatePhotos();
+            _filteredPersons = new ObservableCollection<Person>(_allPersons);
+
+            _eventAggregator.GetEvent<PersonListChangedEvent>().Subscribe(ValidatePhotos);
         }
 
 
@@ -42,32 +58,37 @@ namespace MediaFaceSearcher.ViewModels
 
         private void ValidatePhotos()
         {
-            if (_allPersons.Count == 0) return;
-
-            List<Person> toDeletePersons = new List<Person>();
-            foreach (var person in _allPersons)
+            _allPersons = _personDao.Read();
+            if (_allPersons.Any())
             {
-                var lastPhoto = person.Photos.LastOrDefault();
-                var path = lastPhoto.FilePath;
-                var bitmap = new Bitmap(path);
-                var croppedImage = bitmap.Clone(lastPhoto.FaceBox, PixelFormat.Format24bppRgb).ToBItmapSource();
-                person.MainPhoto = croppedImage;
 
-
-                List<Photo> toDeletePhotos = new List<Photo>();
-                foreach (var photo in person.Photos)
+                List<Person> toDeletePersons = new List<Person>();
+                foreach (var person in _allPersons)
                 {
-                    if(!File.Exists(photo.FilePath)) toDeletePhotos.Add(photo);
-                    if(photo.DateAdded == DateTime.MinValue) photo.DateAdded = DateTime.Now;
-                }
-                person.Photos.RemoveAll(p => toDeletePhotos.Contains(p));
+                    List<Photo> toDeletePhotos = new List<Photo>();
+                    foreach (var photo in person.Photos)
+                    {
+                        if (!File.Exists(photo.FilePath)) toDeletePhotos.Add(photo);
+                        if (photo.DateAdded == DateTime.MinValue) photo.DateAdded = DateTime.Now;
+                    }
 
-                if(person.Photos.Count == 0)
-                {
-                    toDeletePersons.Add(person);
+                    person.Photos.RemoveAll(p => toDeletePhotos.Contains(p));
+
+                    if (person.Photos.Count == 0)
+                    {
+                        toDeletePersons.Add(person);
+                        continue;
+                    }
+
+                    if (person.MainPhoto == null)
+                    {
+                        var lastPhoto = person.Photos.LastOrDefault();
+                        person.MainPhoto = new(lastPhoto.FilePath, lastPhoto.FaceBox);
+                    }
                 }
+
+                _allPersons.RemoveAll(p => toDeletePersons.Contains(p));
             }
-            _allPersons.RemoveAll(p => toDeletePersons.Contains(p));
 
             FilteredPersons = new ObservableCollection<Person>(_allPersons);
         }
@@ -87,8 +108,8 @@ namespace MediaFaceSearcher.ViewModels
             set => SetProperty(ref _folders, value);
         }
 
-        private Person _selectedPerson;
-        public Person SelectedPerson
+        private Person? _selectedPerson;
+        public Person? SelectedPerson
         {
             get => _selectedPerson;
             set => SetProperty(ref _selectedPerson, value, PersonChanged);
@@ -96,15 +117,22 @@ namespace MediaFaceSearcher.ViewModels
 
         private void PersonChanged()
         {
-            var grouped = _selectedPerson.Photos
-                .GroupBy(p => p.Emotion)
-                .Select(g => new Folder
-                {
-                    Name = g.Key.ToString(),
-                    Photos = g.ToList()
-                });
+            if (_selectedPerson != null)
+            {
+                var grouped = _selectedPerson.Photos
+                    .GroupBy(p => p.Emotion)
+                    .Select(g => new Folder
+                    {
+                        Name = g.Key.ToString(),
+                        Photos = g.ToList()
+                    });
 
-            Folders = new ObservableCollection<Folder>(grouped);
+                Folders = new ObservableCollection<Folder>(grouped);
+            }
+            else
+            {
+                Folders = new ObservableCollection<Folder>();
+            }
         }
 
         public DelegateCommand CloseFolderCommand { get; }
@@ -112,16 +140,136 @@ namespace MediaFaceSearcher.ViewModels
         {
             SelectedFolder = null;
         }
-    }
 
-    public class Folder
-    {
-        public string Name { get; set; }
-        public List<Photo> Photos { get; set; } = new List<Photo>();
 
-        public override string ToString()
+        public DelegateCommand DeletePersonCommand { get; }
+        private async void DeletePerson()
         {
-            return Name;
+            if (SelectedPerson == null) return;
+            var result = await _dialogCoordinator.ShowMessageAsync(
+                this,
+                "Підтвердження видалення",
+                "Ви впенені що бажаєте видалити людину? Цю дію неможливо скасувати!",
+                MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings()
+                {
+                    AffirmativeButtonText = "Так",
+                    NegativeButtonText = "Ні",
+                });
+            if (result == MessageDialogResult.Affirmative)
+            {
+                _allPersons.Remove(SelectedPerson);
+                _personDao.Update(_allPersons);
+                SelectedPerson = null;
+            }
         }
+
+
+        public DelegateCommand RenamePersonCommand { get; }
+        private async void RenamePerson()
+        {
+            if (_selectedPerson == null)
+                return;
+
+            var settings = new MetroDialogSettings
+            {
+                DefaultText = _selectedPerson.Name,
+                AffirmativeButtonText = "ОК",
+                NegativeButtonText = "Скасувати",
+                AnimateShow = true
+            };
+
+            string result = await _dialogCoordinator.ShowInputAsync(this, "Перейменування", "Введіть нове ім’я:", settings);
+
+            if (!string.IsNullOrWhiteSpace(result) && result != _selectedPerson.Name)
+            {
+                _selectedPerson.Name = result;
+                _personDao.Update(_allPersons);
+            }
+        }
+
+
+        public DelegateCommand<Folder> DeleteFolderCommand { get; }
+        private async void DeleteFolder(Folder folder)
+        {
+            if (_selectedPerson == null) return;
+            var result = await _dialogCoordinator.ShowMessageAsync(
+                this,
+                "Підтвердження видалення",
+                "Ви впенені що бажаєте видалити папку? Цю дію неможливо скасувати!",
+                MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings()
+                {
+                    AffirmativeButtonText = "Так",
+                    NegativeButtonText = "Ні",
+                });
+            if (result == MessageDialogResult.Affirmative)
+            {
+                _selectedPerson.Photos.RemoveAll(p => p.Emotion.ToString() == folder.Name);
+
+                if(!_selectedPerson.Photos.Any()) 
+                    _allPersons.Remove(_selectedPerson);
+
+                _personDao.Update(_allPersons);
+            }
+        }
+
+
+        public DelegateCommand<Photo> OpenPhotoCommand { get; }
+        private void OpenPhoto(Photo photo)
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = photo.FilePath,
+                UseShellExecute = true // Required to open with default associated app
+            });
+        }
+
+
+        public DelegateCommand<MovePhotoArgs> MovePhotoCommand { get; }
+        private void MovePhoto(MovePhotoArgs args)
+        {
+            _selectedPerson?.Photos.Remove(args.Photo);
+            args.Photo.Emotion = Enum.Parse<Emotion>(args.TargetFolderName);
+            _selectedPerson?.Photos.Add(args.Photo);
+            _personDao.Update(_allPersons);
+        }
+
+        public DelegateCommand<Photo> MakePhotoMainCommand { get; }
+        private void MakePhotoMain(Photo photo)
+        {
+            _selectedPerson.MainPhoto = new MainPhoto(photo.FilePath, photo.FaceBox);
+            _personDao.Update(_allPersons);
+        }
+
+
+        public DelegateCommand<Photo> DeletePhotoCommand { get; }
+        private async void DeletePhoto(Photo photo)
+        {
+            if (_selectedPerson == null) return;
+            var result = await _dialogCoordinator.ShowMessageAsync(
+                this,
+                "Підтвердження видалення",
+                "Ви впенені що бажаєте видалити фото? Цю дію неможливо скасувати!",
+                MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings()
+                {
+                    AffirmativeButtonText = "Так",
+                    NegativeButtonText = "Ні",
+                });
+            if (result == MessageDialogResult.Affirmative)
+            {
+                _selectedPerson.Photos.Remove(photo);
+                if(File.Exists(photo.FilePath)) File.Delete(photo.FilePath);
+            }
+        }
+    }
+}
+
+public class Folder
+{
+    public string Name { get; set; }
+    public List<Photo> Photos { get; set; } = new List<Photo>();
+
+    public override string ToString()
+    {
+        return Name;
     }
 }

@@ -11,10 +11,13 @@
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=viewModels:PeoplePageViewModel}"
              prism:ViewModelLocator.AutoWireViewModel="True"
+             mah:DialogParticipation.Register="{Binding}"
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <converters:PhotoToFaceConverter x:Key="PhotoToFaceConverter"/>
         <converters:NullToBoolConverter x:Key="NullToBoolConverter"/>
+        <converters:PhotosToLastConverter x:Key="PhotosToLastConverter"/>
+        <converters:PhotoAndTargetFolderConverter x:Key="PhotoAndTargetFolderConverter"/>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -26,17 +29,49 @@
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
 
+        <FrameworkElement x:Name="dummyElement" Visibility="Collapsed"/>
         <ListBox Grid.Column="0" Grid.Row="1" ItemsSource="{Binding FilteredPersons}"
-                 SelectedValue="{Binding SelectedPerson}">
+                 SelectedItem="{Binding SelectedPerson}" Name="PersonsListBox">
+            <ListBox.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Перейменувати"
+                              Foreground="DarkCyan"
+                              Command="{Binding RenamePersonCommand}">
+                        <MenuItem.Icon>
+                            <iconPacks:PackIconMaterial Kind="RenameBox" Width="16" Height="16" Foreground="DarkCyan"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Видалити"
+                              Foreground="Red"
+                              Command="{Binding DeletePersonCommand}">
+                        <MenuItem.Icon>
+                            <iconPacks:PackIconMaterial Kind="TrashCan" Width="16" Height="16" Foreground="Red"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </ContextMenu>
+            </ListBox.ContextMenu>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Orientation="Horizontal">
-                        <Image Source="{Binding MainPhoto}" Width="60" Height="80" Stretch="Fill"/>
-                        <Label Content="{Binding Name}" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                    <StackPanel Orientation="Horizontal" Margin="5">
+                        <Image Width="60" Height="80" Stretch="Fill">
+                            <Image.Source>
+                                <MultiBinding Converter="{StaticResource PhotoToFaceConverter}">
+                                    <Binding Path="MainPhoto.Path"/>
+                                    <Binding Path="MainPhoto.Rectangle"/>
+                                </MultiBinding>
+                            </Image.Source>
+                        </Image>
+                        <Label x:Name="NameBox"
+                                 Content="{Binding Name}"
+                                 FontSize="24"
+                                 Margin="20,0,0,0"
+                                 VerticalAlignment="Center">
+                        </Label>
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
+
 
         <Rectangle Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Width="3" HorizontalAlignment="Left" Fill="Gray" Margin="0, 47"/>
 
@@ -53,17 +88,56 @@
 
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <Border BorderBrush="Black" BorderThickness="1" Margin="5" Padding="5" Width="150">
-                        <StackPanel>
-                            <!-- Назва папки -->
-                            <TextBlock FontWeight="Bold" Margin="0,0,0,5">
-                                <Run Text="{Binding Name}"/>
-                                <Run Text=" ("/>
-                                <Run Text="{Binding Photos.Count, Mode=OneWay}"/>
-                                <Run Text=")"/>
-                            </TextBlock>
-                        </StackPanel>
-                    </Border>
+                    <Grid Width="150" Height="120" Margin="25, 10"
+                          PreviewMouseRightButtonDown="Grid_PreviewMouseRightButtonDown">
+                        <Grid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Видалити"
+                                          Command="{Binding Source={x:Reference dummyElement}, Path=DataContext.DeleteFolderCommand}"
+                                          CommandParameter="{Binding}">
+                                    <MenuItem.Icon>
+                                        <iconPacks:PackIconMaterial Kind="TrashCan" Width="16" Height="16" Foreground="Red"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                            </ContextMenu>
+                        </Grid.ContextMenu>
+                        <!-- Тіло папки -->
+                        <Border Background="#FFDBA76A" CornerRadius="4" BorderBrush="#CC8B5E3C" BorderThickness="1"/>
+
+                        <!-- Фото, яке визирає -->
+                        <Image Source="{Binding Photos, Converter={StaticResource PhotosToLastConverter}}"
+                               Width="80" Height="80"
+                               Margin="0,20,0,0"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Top"
+                               RenderTransformOrigin="0.5,0">
+                            <Image.RenderTransform>
+                                <RotateTransform Angle="2"/>
+                            </Image.RenderTransform>
+                            <Image.Effect>
+                                <DropShadowEffect ShadowDepth="2" Opacity="0.3"/>
+                            </Image.Effect>
+                        </Image>
+
+                        <!-- Кришка папки -->
+                        <Border Background="#FFEEC183" Height="20" Width="100"
+                                HorizontalAlignment="Left" VerticalAlignment="Top"
+                                CornerRadius="2,2,0,0" Margin="10,0,0,0"
+                                RenderTransformOrigin="0.5,1">
+                            <Border.RenderTransform>
+                                <RotateTransform Angle="-10"/>
+                            </Border.RenderTransform>
+                        </Border>
+
+                        <!-- Назва папки -->
+                        <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="5,0,5,5"
+                                   FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap">
+                            <Run Text="{Binding Name}"/>
+                            <Run Text=" ("/>
+                            <Run Text="{Binding Photos.Count, Mode=OneWay}"/>
+                            <Run Text=")"/>
+                        </TextBlock>
+                    </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
@@ -82,11 +156,61 @@
                     <WrapPanel />
                 </ItemsPanelTemplate>
             </ListView.ItemsPanel>
-
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel>
                         <Image Width="160" Height="160" Margin="5">
+                            <Image.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Відкрити фото"
+                                              Command="{Binding Source={x:Reference dummyElement}, Path=DataContext.OpenPhotoCommand}"
+                                              CommandParameter="{Binding}">
+                                        <MenuItem.Icon>
+                                            <iconPacks:PackIconMaterial Kind="OpenInApp" Width="16" Height="16" Foreground="GreenYellow"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem> 
+                                    <MenuItem Header="Зробити головним"
+                                              Command="{Binding Source={x:Reference dummyElement}, Path=DataContext.MakePhotoMainCommand}"
+                                              CommandParameter="{Binding}">
+                                        <MenuItem.Icon>
+                                            <iconPacks:PackIconMaterial Kind="FaceManProfile" Width="16" Height="16" Foreground="CornflowerBlue"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="Перемістити до">
+                                        <MenuItem.Icon>
+                                            <iconPacks:PackIconMaterial Kind="FileMove" Width="16" Height="16" Foreground="Yellow"/>
+                                        </MenuItem.Icon>
+                                            <MenuItem Header="Нейтрально"
+                                                      Command="{Binding Source={x:Reference dummyElement}, Path=DataContext.MovePhotoCommand}"
+                                                      CommandParameter="{Binding Converter={StaticResource PhotoAndTargetFolderConverter}, ConverterParameter=Нейтрально}"/>
+                                            <MenuItem Header="Щастя"
+                                                      Command="{Binding Source={x:Reference dummyElement}, Path=DataContext.MovePhotoCommand}"
+                                                      CommandParameter="{Binding Converter={StaticResource PhotoAndTargetFolderConverter}, ConverterParameter=Щастя}"/>
+                                            <MenuItem Header="Подив"
+                                                      Command="{Binding Source={x:Reference dummyElement}, Path=DataContext.MovePhotoCommand}"
+                                                      CommandParameter="{Binding Converter={StaticResource PhotoAndTargetFolderConverter}, ConverterParameter=Подив}"/>
+                                            <MenuItem Header="Сум"
+                                                      Command="{Binding Source={x:Reference dummyElement}, Path=DataContext.MovePhotoCommand}"
+                                                      CommandParameter="{Binding Converter={StaticResource PhotoAndTargetFolderConverter}, ConverterParameter=Сум}"/>
+                                            <MenuItem Header="Гнів"
+                                                      Command="{Binding Source={x:Reference dummyElement}, Path=DataContext.MovePhotoCommand}"
+                                                      CommandParameter="{Binding Converter={StaticResource PhotoAndTargetFolderConverter}, ConverterParameter=Гнів}"/>
+                                            <MenuItem Header="Огида"
+                                                      Command="{Binding Source={x:Reference dummyElement}, Path=DataContext.MovePhotoCommand}"
+                                                      CommandParameter="{Binding Converter={StaticResource PhotoAndTargetFolderConverter}, ConverterParameter=Огида}"/>
+                                            <MenuItem Header="Страх"
+                                                      Command="{Binding Source={x:Reference dummyElement}, Path=DataContext.MovePhotoCommand}"
+                                                      CommandParameter="{Binding Converter={StaticResource PhotoAndTargetFolderConverter}, ConverterParameter=Страх}"/>
+                                    </MenuItem>
+                                    <MenuItem Header="Видалити"
+                                              Command="{Binding Source={x:Reference dummyElement}, Path=DataContext.DeletePhotoCommand}"
+                                              CommandParameter="{Binding}">
+                                        <MenuItem.Icon>
+                                            <iconPacks:PackIconMaterial Kind="TrashCan" Width="16" Height="16" Foreground="Red"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </Image.ContextMenu>
                             <Image.Source>
                                 <MultiBinding Converter="{StaticResource PhotoToFaceConverter}">
                                     <Binding Path="FilePath"/>

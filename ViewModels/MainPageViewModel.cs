@@ -15,12 +15,14 @@ using MediaFaceSearcher.Views;
 using SixLabors.ImageSharp.PixelFormats;
 using Size = System.Drawing.Size;
 using MathNet.Numerics;
+using MediaFaceSearcher.Model.Events;
 
 namespace MediaFaceSearcher.ViewModels
 {
     public class MainPageViewModel : BindableBase
     {
         private readonly IPersonDao _personDao;
+        private readonly IEventAggregator _eventAggregator;
 
         private readonly FaceDetector _faceDetector;
         private readonly FaceRecognizer _faceRecognizer;
@@ -29,7 +31,7 @@ namespace MediaFaceSearcher.ViewModels
         private Canvas? FaceCanvas;
         private List<Person> _allPersons;
 
-        public MainPageViewModel(IPersonDao personDao)
+        public MainPageViewModel(IPersonDao personDao, IEventAggregator eventAggregator)
         {
             OpenMediaFileCommand = new DelegateCommand<Button>(OpenMediaFile);
             CloseMediaCommand = new DelegateCommand(CloseMedia);
@@ -37,22 +39,21 @@ namespace MediaFaceSearcher.ViewModels
             SaveFacesCommand = new DelegateCommand(SaveFaces);
 
             _personDao = personDao;
+            _eventAggregator = eventAggregator;
 
             _faceDetector = new FaceDetector();
             _faceRecognizer = new FaceRecognizer();
             _emotionDetector = new EmotionDetector();
 
             _allPersons = _personDao.Read();
-            _personDao.PersonChanged += (_, _) =>
-            {
-                _allPersons = _personDao.Read();
-            };
+            _eventAggregator.GetEvent<PersonListChangedEvent>().Subscribe(UpdatePerson);
         }
 
 
         #region Binding
 
         private ObservableCollection<PotentialPerson> _recentPersons = new();
+
         public ObservableCollection<PotentialPerson> RecentPersons
         {
             get => _recentPersons;
@@ -60,6 +61,7 @@ namespace MediaFaceSearcher.ViewModels
         }
 
         private BitmapSource _mediaSource;
+
         public BitmapSource MediaSource
         {
             get => _mediaSource;
@@ -71,6 +73,7 @@ namespace MediaFaceSearcher.ViewModels
         #region Commands
 
         public DelegateCommand<Button> OpenMediaFileCommand { get; }
+
         private void OpenMediaFile(Button button)
         {
             var dialog = CreateOpenFileDialog();
@@ -80,7 +83,8 @@ namespace MediaFaceSearcher.ViewModels
                 int targetWidth = (int)button.ActualWidth;
                 int targetHeight = (int)button.ActualHeight;
 
-                using var paddedBitmap = CreatePaddedBitmap(originalBitmap, targetWidth, targetHeight, out int scaledWidth, out int scaledHeight);
+                using var paddedBitmap = CreatePaddedBitmap(originalBitmap, targetWidth, targetHeight,
+                    out int scaledWidth, out int scaledHeight);
 
                 MediaSource = paddedBitmap.ToBItmapSource();
 
@@ -92,15 +96,17 @@ namespace MediaFaceSearcher.ViewModels
 
 
         public DelegateCommand CloseMediaCommand { get; }
+
         private void CloseMedia()
         {
             MediaSource = null;
             FaceCanvas?.Children.Clear();
             //_mediaPlayer.Stop();
         }
-        
+
 
         public DelegateCommand<Canvas> CanvasLoadedCommand { get; }
+
         private void CanvasLoaded(Canvas canvas)
         {
             FaceCanvas = canvas;
@@ -108,11 +114,13 @@ namespace MediaFaceSearcher.ViewModels
 
 
         public DelegateCommand SaveFacesCommand { get; }
+
         private void SaveFaces()
         {
             var saveWindow = new AddingPersonView(RecentPersons.ToList(), _allPersons);
             saveWindow.ShowDialog();
         }
+
         #endregion
 
         #region Methods
@@ -265,12 +273,13 @@ namespace MediaFaceSearcher.ViewModels
                 {
                     confidence = embedding.Dot(photo.Embedding);
                     if (!(confidence > maxConfidence)) continue;
-                    
+
                     maxConfidence = confidence;
                     bestPerson = person;
                 }
             }
 
+            confidence = maxConfidence;
             if (bestPerson == null) return false;
 
             closestPerson = bestPerson;
@@ -283,8 +292,13 @@ namespace MediaFaceSearcher.ViewModels
             RecentPersons.Clear();
         }
 
-        #endregion
-
-       
+        private void UpdatePerson()
+        {
+            _allPersons = _personDao.Read();
+        }
     }
+
+    #endregion
+
+
 }

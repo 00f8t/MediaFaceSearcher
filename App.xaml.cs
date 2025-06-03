@@ -19,6 +19,8 @@ public partial class App : PrismApplication
     {
         containerRegistry.Register<IPersonDao, PersonDao>();
         containerRegistry.Register<IDialogCoordinator, DialogCoordinator>();
+
+        containerRegistry.RegisterSingleton<IEventAggregator, EventAggregator>();
     }
 }
 

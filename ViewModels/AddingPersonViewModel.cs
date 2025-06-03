@@ -142,7 +142,11 @@ namespace MediaFaceSearcher.ViewModels
                     this,
                     "Завершення додавання",
                     "Всі фотографії додані. Натисніть 'Готово' для збереження.",
-                    MessageDialogStyle.AffirmativeAndNegative);
+                    MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings()
+                    {
+                        AffirmativeButtonText = "Готово",
+                        NegativeButtonText = "Скасувати",
+                    });
 
                 if (result == MessageDialogResult.Affirmative)
                 {
@@ -235,7 +239,7 @@ namespace MediaFaceSearcher.ViewModels
                 {
                     OnPageChanged();
                     CurrentPerson = _persons[Math.Min(currentIndex, _persons.Count - 1)];
-                    if (CurrentPerson.ClosestPerson != null)
+                    if (CurrentPerson.ClosestPerson != null && CurrentPerson.ClosestPerson != _allPersons.First())
                     {
                         SelectedPerson = CurrentPerson.ClosestPerson;
                         Name = SelectedPerson.Name;

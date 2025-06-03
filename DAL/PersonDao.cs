@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MediaFaceSearcher.Model;
+using MediaFaceSearcher.Model.Events;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using NumSharp;
@@ -15,19 +16,23 @@ namespace MediaFaceSearcher.DAL
     {
         private readonly string _path = "person.json";
         public event EventHandler? PersonChanged;
+        private readonly IEventAggregator _eventAggregator;
 
+        public PersonDao(IEventAggregator eventAggregator)
+        {
+            _eventAggregator = eventAggregator;
+        }
         public void Update(List<Person> personList)
         {
             var serialized = JsonConvert.SerializeObject(personList);
             File.WriteAllText(_path, serialized);
-            PersonChanged?.Invoke(null, null);
+            _eventAggregator.GetEvent<PersonListChangedEvent>().Publish();
         }
         public List<Person> Read()
         {
             try
             {
                 if (!File.Exists(_path)) return [];
-
                 return JsonConvert.DeserializeObject<List<Person>>(File.ReadAllText(_path)) ?? new List<Person>();
             }
             catch (Exception ex)
