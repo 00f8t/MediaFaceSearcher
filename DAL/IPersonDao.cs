@@ -9,6 +9,7 @@ namespace MediaFaceSearcher.DAL
 {
     public interface IPersonDao
     {
+        event EventHandler PersonChanged;
         void Update(List<Person> personList);
         List<Person> Read();
     }

@@ -25,7 +25,7 @@ namespace MediaFaceSearcher.ViewModels
         {
             NextPhotoCommand = new DelegateCommand(NextPhoto, CanGoNext);
             PreviousPhotoCommand = new DelegateCommand(PreviousPhoto, CanGoPrevious);
-            DeletePhotoCommand = new DelegateCommand(DeletePhoto, CanDelete);
+            DeletePhotoCommand = new DelegateCommand(DeletePhoto);
 
             _personDao = personDao;
             _dialogCoordinator = dialogCoordinator;
@@ -112,10 +112,11 @@ namespace MediaFaceSearcher.ViewModels
 
 
         public DelegateCommand NextPhotoCommand { get; }
-        private void NextPhoto()
+        private async void NextPhoto()
         {
             CurrentPerson.Name = Name;
             CurrentPerson.Emotion = Emotion;
+            CurrentPerson.ClosestPerson = SelectedPerson;
 
             OnPageChanged();
             int currentIndex = _persons.IndexOf(CurrentPerson);
@@ -137,14 +138,18 @@ namespace MediaFaceSearcher.ViewModels
             }
             else
             {
-                var result = MessageBox.Show(
-                    "Всі фотографії додані. Натисніть 'Готово' для збереження.",
+                var result = await _dialogCoordinator.ShowMessageAsync(
+                    this,
                     "Завершення додавання",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                    "Всі фотографії додані. Натисніть 'Готово' для збереження.",
+                    MessageDialogStyle.AffirmativeAndNegative);
 
-                if (result == MessageBoxResult.OK)
+                if (result == MessageDialogResult.Affirmative)
+                {
                     SavePersons();
+                    _view.DialogResult = true;
+                    _view.Close();
+                }
             }
         }
 
@@ -152,31 +157,25 @@ namespace MediaFaceSearcher.ViewModels
         {
             foreach (var person in _persons)
             {
+                var photo = new Photo()
+                {
+                    Embedding = person.Embedding,
+                    Emotion = person.Emotion,
+                    FilePath = person.FilePath,
+                    FaceBox = person.FaceBox,
+                    DateAdded = DateTime.Now
+                };
+
                 if (SelectedPerson != _allPersons.First())
                 {
-                    _allPersons[_allPersons.IndexOf(person.ClosestPerson)].Photos.Add(new Photo()
-                    {
-                        Embedding = person.Embedding,
-                        Emotion = person.Emotion,
-                        FilePath = person.FilePath,
-                        FaceBox = person.FaceBox,
-                    });
+                    _allPersons[_allPersons.IndexOf(person.ClosestPerson)].Photos.Add(photo);
                 }
                 else
                 {
                     _allPersons.Add(new Person()
                     {
                         Name = person.Name,
-                        Photos = new List<Photo>
-                        {
-                            new Photo()
-                            {
-                                Embedding = person.Embedding,
-                                Emotion = person.Emotion,
-                                FilePath = person.FilePath,
-                                FaceBox = person.FaceBox,
-                            }
-                        }
+                        Photos = new List<Photo> { photo }
                     });
 
                 }
@@ -184,11 +183,9 @@ namespace MediaFaceSearcher.ViewModels
 
             _allPersons.RemoveAt(0);
             _personDao.Update(_allPersons.ToList());
-            _view.Close();
         }
 
         public DelegateCommand PreviousPhotoCommand { get; }
-
         private void PreviousPhoto()
         {
             OnPageChanged();
@@ -220,9 +217,15 @@ namespace MediaFaceSearcher.ViewModels
         public bool CanGoNext() => !string.IsNullOrEmpty(Name);
 
         public DelegateCommand DeletePhotoCommand { get; }
-
         private void DeletePhoto()
         {
+            if (_persons.Count == 1)
+            {
+                _view.DialogResult = false;
+                _view.Close();
+                return;
+            }
+
             int currentIndex = _persons.IndexOf(CurrentPerson);
             if (currentIndex >= 0)
             {
@@ -240,17 +243,12 @@ namespace MediaFaceSearcher.ViewModels
                     else
                     {
                         SelectedPerson = _allPersons.First();
-                        Name = string.Empty;
+                        Name = CurrentPerson.Name;
                     }
 
                     Emotion = CurrentPerson.Emotion;
                 }
             }
-        }
-
-        private bool CanDelete()
-        {
-            return _persons.Count > 1;
         }
     }
 }

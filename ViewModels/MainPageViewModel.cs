@@ -43,6 +43,10 @@ namespace MediaFaceSearcher.ViewModels
             _emotionDetector = new EmotionDetector();
 
             _allPersons = _personDao.Read();
+            _personDao.PersonChanged += (_, _) =>
+            {
+                _allPersons = _personDao.Read();
+            };
         }
 
 

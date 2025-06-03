@@ -7,24 +7,28 @@ using System.Threading.Tasks;
 using MediaFaceSearcher.Model;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using NumSharp;
 
 namespace MediaFaceSearcher.DAL
 {
     public class PersonDao : IPersonDao
     {
-        private readonly string path = "person.json";
+        private readonly string _path = "person.json";
+        public event EventHandler? PersonChanged;
+
         public void Update(List<Person> personList)
         {
             var serialized = JsonConvert.SerializeObject(personList);
-            File.WriteAllText(path, serialized);
+            File.WriteAllText(_path, serialized);
+            PersonChanged?.Invoke(null, null);
         }
         public List<Person> Read()
         {
             try
             {
-                if (!File.Exists(path)) return [];
+                if (!File.Exists(_path)) return [];
 
-                return JsonConvert.DeserializeObject<List<Person>>(File.ReadAllText(path)) ?? new List<Person>();
+                return JsonConvert.DeserializeObject<List<Person>>(File.ReadAllText(_path)) ?? new List<Person>();
             }
             catch (Exception ex)
             {
