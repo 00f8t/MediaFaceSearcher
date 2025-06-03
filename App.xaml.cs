@@ -1,5 +1,6 @@
 ﻿using MediaFaceSearcher.Views;
 using System.Windows;
+using MahApps.Metro.Controls.Dialogs;
 using MediaFaceSearcher.DAL;
 
 namespace MediaFaceSearcher;
@@ -17,6 +18,7 @@ public partial class App : PrismApplication
     protected override void RegisterTypes(IContainerRegistry containerRegistry)
     {
         containerRegistry.Register<IPersonDao, PersonDao>();
+        containerRegistry.Register<IDialogCoordinator, DialogCoordinator>();
     }
 }
 

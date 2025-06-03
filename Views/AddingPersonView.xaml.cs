@@ -11,6 +11,10 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using MahApps.Metro.Controls.Dialogs;
+using MediaFaceSearcher.DAL;
+using MediaFaceSearcher.Model;
+using MediaFaceSearcher.ViewModels;
 
 namespace MediaFaceSearcher.Views
 {
@@ -19,9 +23,11 @@ namespace MediaFaceSearcher.Views
     /// </summary>
     public partial class AddingPersonView
     {
-        public AddingPersonView()
+        public AddingPersonView(List<PotentialPerson> RecentPersons, List<Person> allPersons)
         {
             InitializeComponent();
+            (DataContext as AddingPersonViewModel).Initialize(RecentPersons, allPersons, this);
         }
     }
+
 }

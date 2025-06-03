@@ -10,9 +10,11 @@ using System.Drawing.Imaging;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
+using MahApps.Metro.Controls.Dialogs;
 using MediaFaceSearcher.Views;
 using SixLabors.ImageSharp.PixelFormats;
 using Size = System.Drawing.Size;
+using MathNet.Numerics;
 
 namespace MediaFaceSearcher.ViewModels
 {
@@ -76,7 +78,7 @@ namespace MediaFaceSearcher.ViewModels
 
                 using var paddedBitmap = CreatePaddedBitmap(originalBitmap, targetWidth, targetHeight, out int scaledWidth, out int scaledHeight);
 
-                MediaSource = ConvertBitmapToBitmapSource(paddedBitmap);
+                MediaSource = paddedBitmap.ToBItmapSource();
 
                 var faces = _faceDetector.Detect(dialog.FileName);
                 DrawFacesOnCanvas(faces, originalBitmap.Width, originalBitmap.Height, scaledWidth, scaledHeight);
@@ -89,6 +91,7 @@ namespace MediaFaceSearcher.ViewModels
         private void CloseMedia()
         {
             MediaSource = null;
+            FaceCanvas?.Children.Clear();
             //_mediaPlayer.Stop();
         }
         
@@ -103,10 +106,7 @@ namespace MediaFaceSearcher.ViewModels
         public DelegateCommand SaveFacesCommand { get; }
         private void SaveFaces()
         {
-            var saveWindow = new AddingPersonView
-            {
-                DataContext = new AddingPersonViewModel(RecentPersons.ToList(), _allPersons)
-            };
+            var saveWindow = new AddingPersonView(RecentPersons.ToList(), _allPersons);
             saveWindow.ShowDialog();
         }
         #endregion
@@ -144,15 +144,7 @@ namespace MediaFaceSearcher.ViewModels
             return paddedBitmap;
         }
 
-        private BitmapSource ConvertBitmapToBitmapSource(Bitmap bitmap)
-        {
-            //bitmap.Save(@"C:\Users\rosse\Downloads\foo.jpg");
-            return System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
-                bitmap.GetHbitmap(),
-                IntPtr.Zero,
-                Int32Rect.Empty,
-                BitmapSizeOptions.FromEmptyOptions());
-        }
+
 
         private void DrawFacesOnCanvas(IReadOnlyCollection<FaceDetectorResult> faces, int originalWidth,
             int originalHeight, int scaledWidth, int scaledHeight)
@@ -167,7 +159,7 @@ namespace MediaFaceSearcher.ViewModels
 
             foreach (var face in faces)
             {
-                var faceRect = GetClampedFaceRectangle(face, new Size(originalWidth, originalHeight));
+                var faceRect = face.GetClampedFaceRectangle(new Size(originalWidth, originalHeight));
 
                 // Draw face rectangle
                 var rect = new System.Windows.Shapes.Rectangle
@@ -206,8 +198,8 @@ namespace MediaFaceSearcher.ViewModels
         {
             foreach (var face in faces)
             {
-                var faceRect = GetClampedFaceRectangle(face, new Size(originalBitmap.Width, originalBitmap.Height));
-                var croppedImage = ConvertBitmapToBitmapSource(originalBitmap.Clone(faceRect, PixelFormat.Format24bppRgb));
+                var faceRect = face.GetClampedFaceRectangle(new Size(originalBitmap.Width, originalBitmap.Height));
+                var croppedImage = originalBitmap.Clone(faceRect, PixelFormat.Format24bppRgb).ToBItmapSource();
 
 
                 if (TryFindExistingPerson(face, filePath, out Person closestPerson, out float[] embedding,
@@ -218,7 +210,7 @@ namespace MediaFaceSearcher.ViewModels
                         ClosestPerson = closestPerson,
                         CroppedImage = croppedImage,
                         Confidence = confidence,
-                        FaceDetectorResult = face,
+                        FaceBox = face.GetClampedFaceRectangle(originalBitmap.Size),
                         FilePath = filePath,
                         Embedding = embedding,
                         Emotion = emotion
@@ -231,7 +223,7 @@ namespace MediaFaceSearcher.ViewModels
                         CroppedImage = croppedImage,
                         FilePath = filePath,
                         Embedding = embedding,
-                        FaceDetectorResult = face,
+                        FaceBox = face.GetClampedFaceRectangle(originalBitmap.Size),
                         Emotion = emotion
                     });
                 }
@@ -289,42 +281,6 @@ namespace MediaFaceSearcher.ViewModels
 
         #endregion
 
-        private RectangleF GetClampedFaceRectangle(FaceDetectorResult face, Size originalSize)
-        {
-            var faceX = face.Box.X;
-            var faceY = face.Box.Y;
-            var faceW = face.Box.Width;
-            var faceH = face.Box.Height;
-
-            // Clamp X and adjust width
-            if (faceX < 0)
-            {
-                faceW += faceX; // reduce width by the amount x is negative
-                faceX = 0;
-            }
-
-            if (faceX + faceW > originalSize.Width)
-            {
-                faceW = originalSize.Width - faceX;
-            }
-
-            // Clamp Y and adjust height
-            if (faceY < 0)
-            {
-                faceH += faceY; // reduce height by the amount y is negative
-                faceY = 0;
-            }
-
-            if (faceY + faceH > originalSize.Height)
-            {
-                faceH = originalSize.Height - faceY;
-            }
-
-            // Ensure width and height are not negative
-            faceW = Math.Max(0, faceW);
-            faceH = Math.Max(0, faceH);
-
-            return new RectangleF(faceX, faceY, faceW, faceH);
-        }
+       
     }
 }

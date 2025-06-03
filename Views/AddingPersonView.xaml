@@ -9,7 +9,9 @@
         xmlns:sys="clr-namespace:System;assembly=System.Runtime"
         xmlns:model="clr-namespace:MediaFaceSearcher.Model"
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
-        ResizeMode="CanMinimize"
+        xmlns:mvvm="http://prismlibrary.com/"
+        ResizeMode="CanMinimize" mvvm:ViewModelLocator.AutoWireViewModel="True" 
+        mah:DialogParticipation.Register="{Binding}"
         mc:Ignorable="d" d:DataContext="{d:DesignInstance viewModels:AddingPersonViewModel}"
         Title="Збереження персони" Height="400" Width="600">
     <Grid ShowGridLines="False">
