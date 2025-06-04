@@ -160,6 +160,9 @@
                 <DataTemplate>
                     <StackPanel>
                         <Image Width="160" Height="160" Margin="5">
+                            <Image.ToolTip>
+                                <Image Source="{Binding FilePath}" Stretch="Uniform" Width="500" Height="300"/>
+                            </Image.ToolTip>
                             <Image.ContextMenu>
                                 <ContextMenu>
                                     <MenuItem Header="Відкрити фото"

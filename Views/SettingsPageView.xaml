@@ -17,26 +17,39 @@
                 <RowDefinition/>
                 <RowDefinition/>
                 <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
             </Grid.RowDefinitions>
 
             <Label Grid.Row="0" Content="Поріг визначення обличчя" FontWeight="SemiBold" FontSize="24"/>
             <Slider Grid.Row="1" Minimum="0.3" Maximum="0.99" AutoToolTipPrecision="2" IsMoveToPointEnabled="True" Margin="10,0, 0, 20" Width="250" HorizontalAlignment="Left"
-                    mah:SliderHelper.EnableMouseWheel="MouseHover" AutoToolTipPlacement="TopLeft" mah:SliderHelper.ChangeValueBy="SmallChange" SmallChange="0.05" x:Name="DetSlider"/>
+                    mah:SliderHelper.EnableMouseWheel="MouseHover" AutoToolTipPlacement="TopLeft" mah:SliderHelper.ChangeValueBy="SmallChange" SmallChange="0.05" x:Name="DetSlider"
+                    Value="0.4"/>
             <TextBlock Grid.Row="1" Text="{Binding ElementName=DetSlider, Path=Value, StringFormat={}{0:F2}}" HorizontalAlignment="Right" FontSize="24" FontWeight="SemiBold" Margin="0,0,15,0"/>
 
 
             <Label Grid.Row="2" Content="Поріг розпізнавання обличчя" FontWeight="SemiBold" FontSize="24"/>
             <Slider Grid.Row="3" Minimum="0.3" Maximum="0.99" AutoToolTipPrecision="2" IsMoveToPointEnabled="True" Margin="10,0, 0, 20" Width="250" HorizontalAlignment="Left"
-                    mah:SliderHelper.EnableMouseWheel="MouseHover" AutoToolTipPlacement="TopLeft" mah:SliderHelper.ChangeValueBy="SmallChange" SmallChange="0.05" x:Name="RecSlider"/>
+                    mah:SliderHelper.EnableMouseWheel="MouseHover" AutoToolTipPlacement="TopLeft" mah:SliderHelper.ChangeValueBy="SmallChange" SmallChange="0.05" x:Name="RecSlider"
+                    Value="0.4"/>
             <TextBlock Grid.Row="3" Text="{Binding ElementName=RecSlider, Path=Value, StringFormat={}{0:F2}}" HorizontalAlignment="Right" FontSize="24" FontWeight="SemiBold" Margin="0,0,15,0"/>
 
-            <CheckBox Grid.Row="4" Content="Зберігати копію фото" FontWeight="SemiBold" FontSize="24" Margin="10, 0, 0, 0"
+
+            <TextBlock Grid.Row="4" Text="Мінімальний розмір обличчя" FontWeight="SemiBold" FontSize="24" Margin="10, 0, 0, 0"/>
+            <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="10,0,0,0">
+                <TextBox Width="70" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="16" Text="30"/>
+                <TextBlock Text="x" VerticalAlignment="Center" FontSize="24"/>
+                <TextBox Width="70" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="16" Text="30"/>
+            </StackPanel>
+
+
+            <CheckBox Grid.Row="6" Content="Зберігати копію фото" FontWeight="SemiBold" FontSize="24" Margin="10, 10, 0, 0"
                       VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Left" FlowDirection="RightToLeft"
                       x:Name="SavePhotoCheckBox"/>
 
-            <TextBlock Grid.Row="5" Text="Шлях до збережених фото" FontWeight="SemiBold" FontSize="24" Margin="10, 0, 0, 0" 
+            <TextBlock Grid.Row="7" Text="Шлях до збережених фото" FontWeight="SemiBold" FontSize="24" Margin="10, 0, 0, 0" 
                        mah:VisibilityHelper.IsVisible="{Binding ElementName=SavePhotoCheckBox, Path=IsChecked}"/>
-            <StackPanel Orientation="Horizontal" Grid.Row="6"
+            <StackPanel Orientation="Horizontal" Grid.Row="8"
                         mah:VisibilityHelper.IsVisible="{Binding ElementName=SavePhotoCheckBox, Path=IsChecked}">
                 <TextBox Text="C:\Users\user\OneDrive\Pictures\Camera Roll" IsReadOnly="True" Margin="10, 0, 0, 0"/>
                 <Button Content="..." VerticalContentAlignment="Bottom" Style="{StaticResource MahApps.Styles.Button.Flat}"/>

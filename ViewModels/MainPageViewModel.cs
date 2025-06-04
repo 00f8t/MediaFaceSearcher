@@ -36,7 +36,7 @@ namespace MediaFaceSearcher.ViewModels
             OpenMediaFileCommand = new DelegateCommand<Button>(OpenMediaFile);
             CloseMediaCommand = new DelegateCommand(CloseMedia);
             CanvasLoadedCommand = new DelegateCommand<Canvas>(CanvasLoaded);
-            SaveFacesCommand = new DelegateCommand(SaveFaces);
+            SaveFacesCommand = new DelegateCommand(SaveFaces, CanSave);
 
             _personDao = personDao;
             _eventAggregator = eventAggregator;
@@ -91,6 +91,8 @@ namespace MediaFaceSearcher.ViewModels
                 var faces = _faceDetector.Detect(dialog.FileName);
                 DrawFacesOnCanvas(faces, originalBitmap.Width, originalBitmap.Height, scaledWidth, scaledHeight);
                 AddNewPersons(faces, originalBitmap, dialog.FileName);
+
+                SaveFacesCommand.RaiseCanExecuteChanged();
             }
         }
 
@@ -101,6 +103,7 @@ namespace MediaFaceSearcher.ViewModels
         {
             MediaSource = null;
             FaceCanvas?.Children.Clear();
+            SaveFacesCommand.RaiseCanExecuteChanged();
             //_mediaPlayer.Stop();
         }
 
@@ -296,9 +299,14 @@ namespace MediaFaceSearcher.ViewModels
         {
             _allPersons = _personDao.Read();
         }
+
+        public bool CanSave()
+        {
+            return RecentPersons.Count > 0;
+        }
     }
 
-    #endregion
+        #endregion
 
 
-}
+    }
