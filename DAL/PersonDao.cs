@@ -14,8 +14,7 @@ namespace MediaFaceSearcher.DAL
 {
     public class PersonDao : IPersonDao
     {
-        private readonly string _path = "person.json";
-        public event EventHandler? PersonChanged;
+        private readonly string _path = "DataBase/SentiFace.db";
         private readonly IEventAggregator _eventAggregator;
 
         public PersonDao(IEventAggregator eventAggregator)
@@ -25,6 +24,11 @@ namespace MediaFaceSearcher.DAL
         public void Update(List<Person> personList)
         {
             var serialized = JsonConvert.SerializeObject(personList);
+            if(!Path.Exists(_path))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(_path));
+            }
+
             File.WriteAllText(_path, serialized);
             _eventAggregator.GetEvent<PersonListChangedEvent>().Publish();
         }
