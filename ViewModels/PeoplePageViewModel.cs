@@ -257,7 +257,7 @@ namespace MediaFaceSearcher.ViewModels
             if (result == MessageDialogResult.Affirmative)
             {
                 _selectedPerson.Photos.Remove(photo);
-                if(File.Exists(photo.FilePath)) File.Delete(photo.FilePath);
+                //if(File.Exists(photo.FilePath)) File.Delete(photo.FilePath);
             }
         }
     }
