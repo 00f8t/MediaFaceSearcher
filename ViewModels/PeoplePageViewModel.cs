@@ -58,6 +58,8 @@ namespace MediaFaceSearcher.ViewModels
 
         private void ValidatePhotos()
         {
+            bool changed = false;
+
             _allPersons = _personDao.Read();
             if (_allPersons.Any())
             {
@@ -68,8 +70,16 @@ namespace MediaFaceSearcher.ViewModels
                     List<Photo> toDeletePhotos = new List<Photo>();
                     foreach (var photo in person.Photos)
                     {
-                        if (!File.Exists(photo.FilePath)) toDeletePhotos.Add(photo);
-                        if (photo.DateAdded == DateTime.MinValue) photo.DateAdded = DateTime.Now;
+                        if (!File.Exists(photo.FilePath))
+                        {
+                            toDeletePhotos.Add(photo);
+                            changed = true;
+                        }
+                        if (photo.DateAdded == DateTime.MinValue)
+                        {
+                            photo.DateAdded = DateTime.Now;
+                            changed = true;
+                        }
                     }
 
                     person.Photos.RemoveAll(p => toDeletePhotos.Contains(p));
@@ -77,6 +87,7 @@ namespace MediaFaceSearcher.ViewModels
                     if (person.Photos.Count == 0)
                     {
                         toDeletePersons.Add(person);
+                        changed = true;
                         continue;
                     }
 
@@ -84,13 +95,15 @@ namespace MediaFaceSearcher.ViewModels
                     {
                         var lastPhoto = person.Photos.LastOrDefault();
                         person.MainPhoto = new(lastPhoto.FilePath, lastPhoto.FaceBox);
+                        changed = true;
                     }
                 }
 
                 _allPersons.RemoveAll(p => toDeletePersons.Contains(p));
             }
 
-            _personDao.Update(_allPersons);
+            if(changed)
+                _personDao.Update(_allPersons, false);
 
             FilteredPersons = new ObservableCollection<Person>(_allPersons);
         }

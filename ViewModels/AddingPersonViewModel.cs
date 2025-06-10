@@ -172,6 +172,9 @@ namespace MediaFaceSearcher.ViewModels
                 {
                     var newPath = Path.Combine(_settings.SavePhotoCopyPath, person.Name,
                         Path.GetFileName(person.FilePath));
+
+                    Directory.CreateDirectory(Path.GetDirectoryName(newPath));
+
                     File.Copy(person.FilePath, newPath, true);
                     person.FilePath = newPath;
                 }

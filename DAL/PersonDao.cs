@@ -21,7 +21,7 @@ namespace MediaFaceSearcher.DAL
         {
             _eventAggregator = eventAggregator;
         }
-        public void Update(List<Person> personList)
+        public void Update(List<Person> personList, bool triggerEvent)
         {
             var serialized = JsonConvert.SerializeObject(personList);
             if(!Path.Exists(_path))
@@ -30,7 +30,9 @@ namespace MediaFaceSearcher.DAL
             }
 
             File.WriteAllText(_path, serialized);
-            _eventAggregator.GetEvent<PersonListChangedEvent>().Publish();
+
+            if(triggerEvent)
+                _eventAggregator.GetEvent<PersonListChangedEvent>().Publish();
         }
         public List<Person> Read()
         {
