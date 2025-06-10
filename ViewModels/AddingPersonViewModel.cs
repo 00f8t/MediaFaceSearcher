@@ -2,6 +2,7 @@
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,16 +20,22 @@ namespace MediaFaceSearcher.ViewModels
     {
         private AddingPersonView _view;
         private List<PotentialPerson> _persons = new();
-        private IPersonDao _personDao;
-        private IDialogCoordinator _dialogCoordinator;
-        public AddingPersonViewModel(IPersonDao personDao, IDialogCoordinator dialogCoordinator)
+        private Settings _settings;
+
+        private readonly IPersonDao _personDao;
+        private readonly ISettingsDao _settingsDao;
+        private readonly IDialogCoordinator _dialogCoordinator;
+        public AddingPersonViewModel(IPersonDao personDao, ISettingsDao settingsDao, IDialogCoordinator dialogCoordinator)
         {
             NextPhotoCommand = new DelegateCommand(NextPhoto, CanGoNext);
             PreviousPhotoCommand = new DelegateCommand(PreviousPhoto, CanGoPrevious);
             DeletePhotoCommand = new DelegateCommand(DeletePhoto);
 
             _personDao = personDao;
+            _settingsDao = settingsDao;
             _dialogCoordinator = dialogCoordinator;
+
+            _settings = _settingsDao.Read();
         }
 
         public void Initialize(List<PotentialPerson> persons, List<Person> allPersons, AddingPersonView view)
@@ -161,6 +168,13 @@ namespace MediaFaceSearcher.ViewModels
         {
             foreach (var person in _persons)
             {
+                if (_settings.SavePhotoCopy)
+                {
+                    var newPath = Path.Combine(_settings.SavePhotoCopyPath, person.Name,
+                        Path.GetFileName(person.FilePath));
+                    File.Copy(person.FilePath, newPath, true);
+                    person.FilePath = newPath;
+                }
                 var photo = new Photo()
                 {
                     Embedding = person.Embedding,

@@ -22,16 +22,18 @@ namespace MediaFaceSearcher.ViewModels
     public class MainPageViewModel : BindableBase
     {
         private readonly IPersonDao _personDao;
+        private readonly ISettingsDao _settingsDao;
         private readonly IEventAggregator _eventAggregator;
 
         private readonly FaceDetector _faceDetector;
         private readonly FaceRecognizer _faceRecognizer;
         private readonly EmotionDetector _emotionDetector;
 
+        private Settings _settings;
         private Canvas? FaceCanvas;
         private List<Person> _allPersons;
 
-        public MainPageViewModel(IPersonDao personDao, IEventAggregator eventAggregator)
+        public MainPageViewModel(IPersonDao personDao, ISettingsDao settingsDao, IEventAggregator eventAggregator)
         {
             OpenMediaFileCommand = new DelegateCommand<Button>(OpenMediaFile);
             CloseMediaCommand = new DelegateCommand(CloseMedia);
@@ -40,8 +42,11 @@ namespace MediaFaceSearcher.ViewModels
 
             _personDao = personDao;
             _eventAggregator = eventAggregator;
+            _settingsDao = settingsDao;
 
-            _faceDetector = new FaceDetector();
+            _settings = _settingsDao.Read();
+
+            _faceDetector = new FaceDetector(_settings);
             _faceRecognizer = new FaceRecognizer();
             _emotionDetector = new EmotionDetector();
 
@@ -161,7 +166,7 @@ namespace MediaFaceSearcher.ViewModels
 
 
 
-        private void DrawFacesOnCanvas(IReadOnlyCollection<FaceDetectorResult> faces, int originalWidth,
+        private void DrawFacesOnCanvas(IEnumerable<FaceDetectorResult> faces, int originalWidth,
             int originalHeight, int scaledWidth, int scaledHeight)
         {
             if (FaceCanvas == null) return;
@@ -208,7 +213,7 @@ namespace MediaFaceSearcher.ViewModels
             }
         }
 
-        private void AddNewPersons(IReadOnlyCollection<FaceDetectorResult> faces, Bitmap originalBitmap,
+        private void AddNewPersons(IEnumerable<FaceDetectorResult> faces, Bitmap originalBitmap,
             string filePath)
         {
             foreach (var face in faces)
@@ -266,7 +271,7 @@ namespace MediaFaceSearcher.ViewModels
             emotion = _emotionDetector.Detect(image.ToBitmap()).ToEmotion();
 
 
-            float maxConfidence = 0.5f;
+            float maxConfidence  = _settings.RecognitionConfidence;
             Person bestPerson = null;
             confidence = 0;
 

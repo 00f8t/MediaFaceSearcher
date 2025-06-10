@@ -18,6 +18,7 @@ public partial class App : PrismApplication
     protected override void RegisterTypes(IContainerRegistry containerRegistry)
     {
         containerRegistry.Register<IPersonDao, PersonDao>();
+        containerRegistry.Register<ISettingsDao, SettingsDao>();
         containerRegistry.Register<IDialogCoordinator, DialogCoordinator>();
 
         containerRegistry.RegisterSingleton<IEventAggregator, EventAggregator>();

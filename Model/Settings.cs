@@ -7,14 +7,14 @@ using System.Windows;
 
 namespace MediaFaceSearcher.Model
 {
-    public static class Settings
+    public class Settings
     {
-        public static int MinFaceWidth { get; set; } = 30; // 10% of the image size
-        public static int MinFaceHeight { get; set; } = 30; // 10% of the image size
-        public static bool SavePhotoCopy { get; set; } = true;
-        public static string SavePhotoCopyPath { get; set; } = AppDomain.CurrentDomain.BaseDirectory + "/SavedPhotos";
-        public static float DetectionConfidence { get; set; } = 0.5f; // Confidence threshold for face detection
-        public static float RecognitionConfidence { get; set; } = 0.5f; // Confidence threshold for face recognition
+        public int MinFaceWidth { get; set; } = 30; // 10% of the image size // +
+        public int MinFaceHeight { get; set; } = 30; // 10% of the image size // +
+        public bool SavePhotoCopy { get; set; } = true;
+        public string SavePhotoCopyPath { get; set; } = AppDomain.CurrentDomain.BaseDirectory + "SavedPhotos";
+        public float DetectionConfidence { get; set; } = 0.5f; // Confidence threshold for face detection // +
+        public float RecognitionConfidence { get; set; } = 0.5f; // Confidence threshold for face recognition // +
 
     }
 }
