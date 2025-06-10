@@ -49,15 +49,6 @@
             <Button Style="{StaticResource MahApps.Styles.Button.Flat}" Background="Gray" 
                     Command="{Binding OpenMediaFileCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
                     x:Name="UploadButton">
-                <Button.ContextMenu>
-                    <ContextMenu>
-                        <ContextMenu.Items>
-                            <Label Content="Використовувати як фото профілю"/>
-                            <Label Content="Редагувати фото"/>
-                            <Label Content="Видалити фото"/>
-                        </ContextMenu.Items>
-                    </ContextMenu>
-                </Button.ContextMenu>
                 <icons:PackIconBootstrapIcons Kind="Upload" Width="300" Height="300" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="DarkGray"/>
             </Button>
             <Button Width="40" Height="40" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="15" 
