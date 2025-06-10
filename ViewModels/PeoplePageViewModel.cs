@@ -90,6 +90,8 @@ namespace MediaFaceSearcher.ViewModels
                 _allPersons.RemoveAll(p => toDeletePersons.Contains(p));
             }
 
+            _personDao.Update(_allPersons);
+
             FilteredPersons = new ObservableCollection<Person>(_allPersons);
         }
 
@@ -257,6 +259,7 @@ namespace MediaFaceSearcher.ViewModels
             if (result == MessageDialogResult.Affirmative)
             {
                 _selectedPerson.Photos.Remove(photo);
+                _personDao.Update(_allPersons);
                 //if(File.Exists(photo.FilePath)) File.Delete(photo.FilePath);
             }
         }

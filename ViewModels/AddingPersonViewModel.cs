@@ -197,7 +197,7 @@ namespace MediaFaceSearcher.ViewModels
             if (currentIndex > 0)
             {
                 CurrentPerson = _persons[currentIndex - 1];
-                if (CurrentPerson.ClosestPerson != null)
+                if (CurrentPerson.ClosestPerson != null && CurrentPerson.ClosestPerson != _allPersons.First()) 
                 {
                     SelectedPerson = CurrentPerson.ClosestPerson;
                     Name = SelectedPerson.Name;
@@ -205,7 +205,7 @@ namespace MediaFaceSearcher.ViewModels
                 else
                 {
                     SelectedPerson = _allPersons.First();
-                    Name = string.Empty;
+                    Name = CurrentPerson.Name;
                 }
 
                 Emotion = CurrentPerson.Emotion;
